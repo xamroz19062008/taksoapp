@@ -86,7 +86,8 @@ def create_ride(request):
     data = request.data
     print("📨 Yangi eʼlon:", data)
 
-    if Ride.objects.filter(driver=user).exists():
+    # Проверка только для таксистов
+    if user.is_driver and Ride.objects.filter(driver=user).exists():
         return Response({'error': 'У вас уже есть активное объявление'}, status=400)
 
     try:
