@@ -6,11 +6,12 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = '__all__'
         extra_kwargs = {
-            'has_ac': {'required': False},  # Разрешить обновление
-            'password': {'write_only': True}  # Скрыть пароль
+            'has_ac': {'required': False},  # ✅ разрешить обновление кондиционера
+            'password': {'write_only': True}  # ✅ скрыть пароль при выводе
         }
 
     def create(self, validated_data):
+        # Используем create_user для шифрования пароля
         return User.objects.create_user(**validated_data)
 
 
@@ -41,4 +42,4 @@ class BookingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Booking
-        fields = '__all__'
+        fields = '__all__' 
