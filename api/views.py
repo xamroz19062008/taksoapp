@@ -10,18 +10,22 @@ from datetime import datetime
 from .models import User, Ride, Booking
 from .serializers import UserSerializer, RideSerializer, BookingSerializer
 
+
 # === ViewSets ===
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
 class RideViewSet(viewsets.ModelViewSet):
     queryset = Ride.objects.all().order_by('-datetime')
     serializer_class = RideSerializer
 
+
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
+
 
 # === Регистрация пользователя ===
 @api_view(['POST'])
@@ -53,11 +57,13 @@ def register_user(request):
         return Response({
             'status': 'created',
             'token': token.key,
-            'is_driver': user.is_driver
+            'is_driver': user.is_driver,
+            'has_ac': user.has_ac
         }, status=201)
     except Exception as e:
         print("❌ Ошибка при регистрации:", str(e))
         return Response({'error': 'Server error', 'detail': str(e)}, status=500)
+
 
 # === Логин пользователя ===
 @api_view(['POST'])
@@ -75,10 +81,12 @@ def login_user(request):
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
-            'is_driver': user.is_driver
+            'is_driver': user.is_driver,
+            'has_ac': user.has_ac
         }, status=200)
 
     return Response({'error': 'Invalid credentials'}, status=401)
+
 
 # === Создание поездки ===
 @api_view(['POST'])
@@ -109,6 +117,7 @@ def create_ride(request):
         print("❌ Xatolik:", str(e))
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
 
+
 # === Получение и обновление текущего пользователя ===
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -118,7 +127,7 @@ def user_me(request):
         return Response({
             'username': user.username,
             'is_driver': user.is_driver,
-            'has_ac': user.has_ac,
+            'has_ac': user.has_ac
         })
     elif request.method == 'PATCH':
         has_ac = request.data.get('has_ac')

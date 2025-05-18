@@ -4,6 +4,7 @@ from api.views import user_me  # если view с user_me находится в 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/users/me/', user_me),
 
     # Основной API
     path('api/', include('api.urls')),
