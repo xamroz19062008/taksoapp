@@ -73,7 +73,7 @@ def login_user(request):
         token, _ = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
-            'is_driver': user.is_driver  # 👈 обязательно передаём роль
+            'is_driver': user.is_driver
         }, status=200)
 
     return Response({'error': 'Invalid credentials'}, status=401)
@@ -84,6 +84,7 @@ def login_user(request):
 def create_ride(request):
     user = request.user
     data = request.data
+    print("📨 Yangi eʼlon:", data)
 
     if Ride.objects.filter(driver=user).exists():
         return Response({'error': 'У вас уже есть активное объявление'}, status=400)
@@ -101,4 +102,5 @@ def create_ride(request):
         serializer = RideSerializer(ride)
         return Response(serializer.data, status=201)
     except Exception as e:
-        return Response({'error': str(e)}, status=400)
+        print("❌ Xatolik:", str(e))
+        return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
