@@ -4,6 +4,8 @@ from rest_framework import status, viewsets
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from django.utils.timezone import make_aware
+from datetime import datetime
 
 from .models import User, Ride, Booking
 from .serializers import UserSerializer, RideSerializer, BookingSerializer
@@ -91,13 +93,15 @@ def create_ride(request):
         return Response({'error': 'У вас уже есть активное объявление'}, status=400)
 
     try:
+        aware_datetime = make_aware(datetime.fromisoformat(data['datetime']))
+
         ride = Ride.objects.create(
             origin=data['origin'],
             destination=data['destination'],
             phone=data['phone'],
             seats=int(data['seats']),
             price=int(data['price']) if user.is_driver else 0,
-            datetime=data['datetime'],
+            datetime=aware_datetime,
             driver=user
         )
         serializer = RideSerializer(ride)
