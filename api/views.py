@@ -88,7 +88,6 @@ def create_ride(request):
     data = request.data
     print("📨 Yangi eʼlon:", data)
 
-    # Проверка только для таксистов
     if user.is_driver and Ride.objects.filter(driver=user).exists():
         return Response({'error': 'У вас уже есть активное объявление'}, status=400)
 
@@ -109,3 +108,21 @@ def create_ride(request):
     except Exception as e:
         print("❌ Xatolik:", str(e))
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
+
+# === Получение и обновление текущего пользователя ===
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def user_me(request):
+    user = request.user
+    if request.method == 'GET':
+        return Response({
+            'username': user.username,
+            'is_driver': user.is_driver,
+            'has_ac': user.has_ac,
+        })
+    elif request.method == 'PATCH':
+        has_ac = request.data.get('has_ac')
+        if has_ac is not None:
+            user.has_ac = has_ac
+            user.save()
+        return Response({'has_ac': user.has_ac})
