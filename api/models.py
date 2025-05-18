@@ -6,7 +6,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20)
     is_driver = models.BooleanField(default=False)
     car_model = models.CharField(max_length=100, blank=True, null=True)
-    has_ac = models.BooleanField(default=False)
+    has_ac = models.BooleanField(default=False)  # ← Кондиционер только у пользователя
 
     def __str__(self):
         return self.username
