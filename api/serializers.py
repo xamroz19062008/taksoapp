@@ -41,6 +41,7 @@ class RideSerializer(serializers.ModelSerializer):
     is_driver = serializers.BooleanField(source='driver.is_driver', read_only=True)
     has_ac = serializers.BooleanField(source='driver.has_ac', read_only=True)
     car_model = serializers.CharField(source='driver.car_model', read_only=True)
+    show_phone = serializers.BooleanField(source='driver.show_phone', read_only=True)
 
     class Meta:
         model = Ride
