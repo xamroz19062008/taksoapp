@@ -23,16 +23,23 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
     def me(self, request):
         user = request.user
+
         if request.method == 'GET':
             return Response({
                 'username': user.username,
                 'is_driver': user.is_driver,
-                'has_ac': user.has_ac
+                'has_ac': user.has_ac,
+                'show_phone': user.show_phone,
             })
+
         elif request.method == 'PATCH':
             user.has_ac = request.data.get('has_ac', user.has_ac)
+            user.show_phone = request.data.get('show_phone', user.show_phone)
             user.save()
-            return Response({'has_ac': user.has_ac})
+            return Response({
+                'has_ac': user.has_ac,
+                'show_phone': user.show_phone,
+            })
 
 
 class RideViewSet(viewsets.ModelViewSet):
@@ -75,7 +82,8 @@ def register_user(request):
             'status': 'created',
             'token': token.key,
             'is_driver': user.is_driver,
-            'has_ac': user.has_ac
+            'has_ac': user.has_ac,
+            'show_phone': user.show_phone,
         }, status=201)
     except Exception as e:
         return Response({'error': 'Server error', 'detail': str(e)}, status=500)
@@ -93,7 +101,8 @@ def login_user(request):
         return Response({
             'token': token.key,
             'is_driver': user.is_driver,
-            'has_ac': user.has_ac
+            'has_ac': user.has_ac,
+            'show_phone': user.show_phone,
         })
 
     return Response({'error': 'Invalid credentials'}, status=401)
