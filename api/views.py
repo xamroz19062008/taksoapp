@@ -147,7 +147,6 @@ def get_chat_messages(request, receiver_id):
 
     chat = get_or_create_chat(user, receiver)
 
-    # ✅ Отмечаем непрочитанные входящие как прочитанные
     ChatMessage.objects.filter(chat=chat, sender=receiver, is_read=False).update(is_read=True)
 
     messages = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
