@@ -85,6 +85,28 @@ def login_user(request):
     return Response({'error': 'Invalid credentials'}, status=401)
 
 
+# === Получение и обновление текущего пользователя (используется в /api/users/me/) ===
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def user_me(request):
+    user = request.user
+
+    if request.method == 'GET':
+        return Response({
+            'username': user.username,
+            'is_driver': user.is_driver,
+            'has_ac': user.has_ac
+        })
+
+    elif request.method == 'PATCH':
+        has_ac = request.data.get('has_ac')
+        if has_ac is not None:
+            user.has_ac = has_ac
+            user.save()
+            return Response({'has_ac': user.has_ac})
+        return Response({'error': 'Missing has_ac field'}, status=400)
+
+
 # === Создание поездки ===
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -109,23 +131,6 @@ def create_ride(request):
         return Response(RideSerializer(ride).data, status=201)
     except Exception as e:
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
-
-
-# === Получение/обновление текущего пользователя ===
-@api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
-def user_me(request):
-    user = request.user
-    if request.method == 'GET':
-        return Response({
-            'username': user.username,
-            'is_driver': user.is_driver,
-            'has_ac': user.has_ac
-        })
-    elif request.method == 'PATCH':
-        user.has_ac = request.data.get('has_ac', user.has_ac)
-        user.save()
-        return Response({'has_ac': user.has_ac})
 
 
 # === Получить чат между двумя пользователями ===
@@ -169,7 +174,7 @@ def send_chat_message(request):
 
     chat = get_or_create_chat(user, receiver)
 
-    message = ChatMessage.objects.create(
+    message = ChatMessage.create(
         chat=chat,
         sender=user,
         message=request.data.get('message')
@@ -200,6 +205,8 @@ def get_user_chats(request):
 
     return Response(result)
 
+
+# === Получить треды чатов пользователя ===
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_threads(request):
