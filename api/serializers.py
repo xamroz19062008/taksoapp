@@ -35,6 +35,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 # ✅ Ride Serializer
 class RideSerializer(serializers.ModelSerializer):
+    driver = serializers.IntegerField(source='driver.id', read_only=True)
     driverUsername = serializers.CharField(source='driver.username', read_only=True)
     is_driver = serializers.BooleanField(source='driver.is_driver', read_only=True)
     has_ac = serializers.BooleanField(source='driver.has_ac', read_only=True)
