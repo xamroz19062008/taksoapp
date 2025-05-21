@@ -8,8 +8,14 @@ from django.utils.timezone import make_aware
 from django.db.models import Q
 from datetime import datetime
 
-from .models import User, Ride, Booking, ChatMessage
-from .serializers import UserSerializer, RideSerializer, BookingSerializer, ChatMessageSerializer
+from .models import User, Ride, Booking, ChatMessage, ChatThread
+from .serializers import (
+    UserSerializer,
+    RideSerializer,
+    BookingSerializer,
+    ChatMessageSerializer,
+    ChatThreadSerializer
+)
 
 # === ViewSets ===
 class UserViewSet(viewsets.ModelViewSet):
@@ -26,19 +32,17 @@ class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
 
-# === Регистрация пользователя ===
+# === Регистрация ===
 @api_view(['POST'])
 def register_user(request):
     data = request.data
-    print("📥 Пришло от клиента:", data)
-
     required_fields = ['username', 'password', 'phone']
     for field in required_fields:
         if not data.get(field):
-            return Response({'error': f'Missing field: {field}'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Missing field: {field}'}, status=400)
 
     if User.objects.filter(username=data['username']).exists():
-        return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Username already taken'}, status=400)
 
     try:
         user = User.objects.create_user(
@@ -60,19 +64,13 @@ def register_user(request):
             'has_ac': user.has_ac
         }, status=201)
     except Exception as e:
-        print("❌ Ошибка при регистрации:", str(e))
         return Response({'error': 'Server error', 'detail': str(e)}, status=500)
 
-# === Логин пользователя ===
+# === Логин ===
 @api_view(['POST'])
 def login_user(request):
-    data = request.data
-    username = data.get('username')
-    password = data.get('password')
-    print("🔐 Попытка входа:", data)
-
-    if not username or not password:
-        return Response({'error': 'Username and password required'}, status=400)
+    username = request.data.get('username')
+    password = request.data.get('password')
 
     user = authenticate(username=username, password=password)
     if user:
@@ -81,7 +79,7 @@ def login_user(request):
             'token': token.key,
             'is_driver': user.is_driver,
             'has_ac': user.has_ac
-        }, status=200)
+        })
 
     return Response({'error': 'Invalid credentials'}, status=401)
 
@@ -91,14 +89,12 @@ def login_user(request):
 def create_ride(request):
     user = request.user
     data = request.data
-    print("📨 Yangi eʼlon:", data)
 
     if user.is_driver and Ride.objects.filter(driver=user).exists():
-        return Response({'error': 'У вас уже есть активное объявление'}, status=400)
+        return Response({'error': 'Sizda allaqachon eʼlon mavjud'}, status=400)
 
     try:
         aware_datetime = make_aware(datetime.fromisoformat(data['datetime']))
-
         ride = Ride.objects.create(
             origin=data['origin'],
             destination=data['destination'],
@@ -108,13 +104,11 @@ def create_ride(request):
             datetime=aware_datetime,
             driver=user
         )
-        serializer = RideSerializer(ride)
-        return Response(serializer.data, status=201)
+        return Response(RideSerializer(ride).data, status=201)
     except Exception as e:
-        print("❌ Xatolik:", str(e))
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
 
-# === Получение и обновление текущего пользователя ===
+# === Получение/обновление текущего пользователя ===
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def user_me(request):
@@ -126,30 +120,53 @@ def user_me(request):
             'has_ac': user.has_ac
         })
     elif request.method == 'PATCH':
-        has_ac = request.data.get('has_ac')
-        if has_ac is not None:
-            user.has_ac = has_ac
-            user.save()
+        user.has_ac = request.data.get('has_ac', user.has_ac)
+        user.save()
         return Response({'has_ac': user.has_ac})
 
-# === 💬 Получение чата по поездке ===
+
+# === 💬 Чат: Получение сообщений между двумя участниками ===
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_chat_messages(request, ride_id):
-    messages = ChatMessage.objects.filter(ride_id=ride_id).order_by('timestamp')
+def get_chat_messages(request, receiver_id):
+    user = request.user
+
+    # Найти или создать тред
+    thread, _ = ChatThread.objects.get_or_create(
+        sender=user,
+        receiver_id=receiver_id
+    )
+    messages = ChatMessage.objects.filter(thread=thread).order_by('timestamp')
     serializer = ChatMessageSerializer(messages, many=True)
     return Response(serializer.data)
 
-# === 💬 Отправка сообщения в чат ===
+# === 💬 Чат: Отправка сообщения ===
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_chat_message(request):
     user = request.user
-    data = request.data
-    message = ChatMessage.objects.create(
-        ride_id=data['ride'],
+    receiver_id = request.data.get('receiver')
+
+    # Найти или создать тред между sender и receiver
+    thread, _ = ChatThread.objects.get_or_create(
         sender=user,
-        message=data['message']
+        receiver_id=receiver_id
     )
-    serializer = ChatMessageSerializer(message)
-    return Response(serializer.data, status=201)
+
+    message = ChatMessage.objects.create(
+        thread=thread,
+        sender=user,
+        message=request.data.get('message')
+    )
+
+    return Response(ChatMessageSerializer(message).data, status=201)
+
+
+# === 💬 Получить список тредов чата пользователя ===
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_threads(request):
+    user = request.user
+    threads = ChatThread.objects.filter(Q(sender=user) | Q(receiver=user)).distinct()
+    serializer = ChatThreadSerializer(threads, many=True)
+    return Response(serializer.data)

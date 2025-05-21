@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 # 👤 Кастомная модель пользователя
 class User(AbstractUser):
     phone = models.CharField(max_length=20)
@@ -39,13 +41,20 @@ class Booking(models.Model):
 
     def __str__(self):
         return f'{self.passenger.username} - {self.ride}'
+    
+class Chat(models.Model):
+    participants = models.ManyToManyField(User)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-# 💬 Сообщения в чате (Ride Chat)
+    def __str__(self):
+        return f"Chat ID {self.id}"
+
 class ChatMessage(models.Model):
-    ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='messages')
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f'{self.sender.username}: {self.message[:20]}...'
+        return f"From {self.sender.username}: {self.message[:20]}"
+
