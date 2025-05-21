@@ -21,7 +21,7 @@ INSTALLED_APPS = [
     'djoser',
     'api',
 ]
-
+AUTH_USER_MODEL = 'api.User'
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

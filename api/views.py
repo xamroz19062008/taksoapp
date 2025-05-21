@@ -8,13 +8,12 @@ from django.utils.timezone import make_aware
 from django.db.models import Q
 from datetime import datetime
 
-from .models import User, Ride, Booking, ChatMessage, ChatThread
+from .models import User, Ride, Booking, ChatMessage, Chat
 from .serializers import (
     UserSerializer,
     RideSerializer,
     BookingSerializer,
     ChatMessageSerializer,
-    ChatThreadSerializer
 )
 
 # === ViewSets ===
@@ -31,6 +30,7 @@ class RideViewSet(viewsets.ModelViewSet):
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
+
 
 # === Регистрация ===
 @api_view(['POST'])
@@ -66,6 +66,7 @@ def register_user(request):
     except Exception as e:
         return Response({'error': 'Server error', 'detail': str(e)}, status=500)
 
+
 # === Логин ===
 @api_view(['POST'])
 def login_user(request):
@@ -82,6 +83,7 @@ def login_user(request):
         })
 
     return Response({'error': 'Invalid credentials'}, status=401)
+
 
 # === Создание поездки ===
 @api_view(['POST'])
@@ -108,6 +110,7 @@ def create_ride(request):
     except Exception as e:
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
 
+
 # === Получение/обновление текущего пользователя ===
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -125,36 +128,49 @@ def user_me(request):
         return Response({'has_ac': user.has_ac})
 
 
-# === 💬 Чат: Получение сообщений между двумя участниками ===
+# === Получить чат между двумя пользователями ===
+def get_or_create_chat(user1, user2):
+    chats = Chat.objects.filter(participants=user1).filter(participants=user2)
+    if chats.exists():
+        return chats.first()
+    else:
+        chat = Chat.objects.create()
+        chat.participants.add(user1, user2)
+        return chat
+
+
+# === Получить сообщения чата ===
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_chat_messages(request, receiver_id):
     user = request.user
+    try:
+        receiver = User.objects.get(id=receiver_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
 
-    # Найти или создать тред
-    thread, _ = ChatThread.objects.get_or_create(
-        sender=user,
-        receiver_id=receiver_id
-    )
-    messages = ChatMessage.objects.filter(thread=thread).order_by('timestamp')
+    chat = get_or_create_chat(user, receiver)
+    messages = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
     serializer = ChatMessageSerializer(messages, many=True)
     return Response(serializer.data)
 
-# === 💬 Чат: Отправка сообщения ===
+
+# === Отправить сообщение ===
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def send_chat_message(request):
     user = request.user
     receiver_id = request.data.get('receiver')
 
-    # Найти или создать тред между sender и receiver
-    thread, _ = ChatThread.objects.get_or_create(
-        sender=user,
-        receiver_id=receiver_id
-    )
+    try:
+        receiver = User.objects.get(id=receiver_id)
+    except User.DoesNotExist:
+        return Response({'error': 'Receiver not found'}, status=404)
+
+    chat = get_or_create_chat(user, receiver)
 
     message = ChatMessage.objects.create(
-        thread=thread,
+        chat=chat,
         sender=user,
         message=request.data.get('message')
     )
@@ -162,11 +178,39 @@ def send_chat_message(request):
     return Response(ChatMessageSerializer(message).data, status=201)
 
 
-# === 💬 Получить список тредов чата пользователя ===
+# === Получить список чатов пользователя ===
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_chats(request):
+    user = request.user
+    chats = Chat.objects.filter(participants=user)
+    result = []
+
+    for chat in chats:
+        last_message = chat.messages.order_by('-timestamp').first()
+        other = chat.participants.exclude(id=user.id).first()
+        result.append({
+            'chat_id': chat.id,
+            'last_message': last_message.message if last_message else '',
+            'timestamp': last_message.timestamp if last_message else '',
+            'sender_username': last_message.sender.username if last_message else '',
+            'receiver_username': other.username if other else '',
+            'receiver': other.id if other else '',
+        })
+
+    return Response(result)
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_threads(request):
     user = request.user
-    threads = ChatThread.objects.filter(Q(sender=user) | Q(receiver=user)).distinct()
-    serializer = ChatThreadSerializer(threads, many=True)
-    return Response(serializer.data)
+    threads = Chat.objects.filter(participants=user).distinct()
+    data = [
+        {
+            'id': chat.id,
+            'participants_usernames': [u.username for u in chat.participants.all()],
+            'created_at': chat.created_at
+        }
+        for chat in threads
+    ]
+    return Response(data)

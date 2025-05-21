@@ -1,15 +1,16 @@
 from rest_framework import serializers
-from .models import User, Ride, Booking, ChatMessage, ChatThread
+from .models import User, Ride, Booking, ChatMessage, Chat
 
-# ✅ ChatThread Serializer
-class ChatThreadSerializer(serializers.ModelSerializer):
-    sender_username = serializers.CharField(source='sender.username', read_only=True)
-    receiver_username = serializers.CharField(source='receiver.username', read_only=True)
+# ✅ Chat Serializer
+class ChatSerializer(serializers.ModelSerializer):
+    participants_usernames = serializers.SerializerMethodField()
 
     class Meta:
-        model = ChatThread
-        fields = ['id', 'sender', 'receiver', 'sender_username', 'receiver_username']
+        model = Chat
+        fields = ['id', 'participants_usernames', 'created_at']
 
+    def get_participants_usernames(self, obj):
+        return [user.username for user in obj.participants.all()]
 
 # ✅ ChatMessage Serializer
 class ChatMessageSerializer(serializers.ModelSerializer):
@@ -17,8 +18,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ChatMessage
-        fields = ['id', 'thread', 'sender', 'sender_username', 'message', 'timestamp']
-
+        fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp']
 
 # ✅ User Serializer
 class UserSerializer(serializers.ModelSerializer):
@@ -33,7 +33,6 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-
 # ✅ Ride Serializer
 class RideSerializer(serializers.ModelSerializer):
     driverUsername = serializers.CharField(source='driver.username', read_only=True)
@@ -44,7 +43,6 @@ class RideSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ride
         fields = '__all__'
-
 
 # ✅ Booking Serializer
 class BookingSerializer(serializers.ModelSerializer):
