@@ -66,6 +66,7 @@ def register_user(request):
         user.is_driver = bool(data.get('is_driver', False))
         user.car_model = data.get('car_model') or ''
         user.has_ac = bool(data.get('has_ac', False))
+        user.show_phone = bool(data.get('show_phone', True))
         user.save()
 
         token, _ = Token.objects.get_or_create(user=user)
