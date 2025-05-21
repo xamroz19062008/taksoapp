@@ -7,10 +7,9 @@ from .views import (
     register_user,
     login_user,
     create_ride,
-    user_me,
-    get_user_threads,       # ✅ список чатов
-    get_chat_messages,      # ✅ сообщения между двумя пользователями
-    send_chat_message       # ✅ отправка сообщения
+    get_user_threads,
+    get_chat_messages,
+    send_chat_message,
 )
 
 router = DefaultRouter()
@@ -28,11 +27,8 @@ urlpatterns = [
     # 🚕 Ride
     path('custom/create_ride/', create_ride),
 
-    # 👤 Profile
-    path('users/me/', user_me),
-
     # 💬 Chat (новая система)
-    path('chat/threads/', get_user_threads),                    # ✅ список всех чатов пользователя
-    path('chat/<int:receiver_id>/messages/', get_chat_messages),  # ✅ сообщения между двумя людьми
-    path('chat/send/', send_chat_message),                      # ✅ отправить сообщение
+    path('chat/threads/', get_user_threads),
+    path('chat/<int:receiver_id>/messages/', get_chat_messages),
+    path('chat/send/', send_chat_message),
 ]
