@@ -210,14 +210,15 @@ def get_user_chats(request):
 def get_user_threads(request):
     user = request.user
     threads = Chat.objects.filter(participants=user).distinct()
-    data = [
-        {
+    data = []
+    for chat in threads:
+        other = chat.participants.exclude(id=user.id).first()
+        data.append({
             'id': chat.id,
             'participants_usernames': [u.username for u in chat.participants.all()],
-            'created_at': chat.created_at
-        }
-        for chat in threads
-    ]
+            'created_at': chat.created_at,
+            'receiver': other.id if other else None
+        })
     return Response(data)
 
 
