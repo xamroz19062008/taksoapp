@@ -4,10 +4,12 @@ from .models import ChatMessage
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)  # ✅
+
     class Meta:
         model = ChatMessage
-        fields = '__all__'
-        
+        fields = ['id', 'ride', 'sender', 'sender_username', 'message', 'timestamp']
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
