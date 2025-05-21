@@ -21,7 +21,6 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_participants_usernames(self, obj):
         return [user.username for user in obj.participants.all()]
 
-# ✅ Сериализатор пользователя
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

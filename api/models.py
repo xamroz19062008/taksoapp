@@ -7,6 +7,8 @@ class User(AbstractUser):
     is_driver = models.BooleanField(default=False)
     car_model = models.CharField(max_length=50, blank=True)
     has_ac = models.BooleanField(default=False)
+    is_female = models.BooleanField(default=False)
+    hide_phone = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
