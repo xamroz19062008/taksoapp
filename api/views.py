@@ -162,6 +162,9 @@ def send_chat_message(request):
     user = request.user
     receiver_id = request.data.get('receiver')
 
+    if not receiver_id:
+        return Response({'error': 'Receiver ID is required'}, status=400)
+
     try:
         receiver = User.objects.get(id=receiver_id)
     except User.DoesNotExist:
@@ -173,7 +176,7 @@ def send_chat_message(request):
         chat=chat,
         sender=user,
         message=request.data.get('message'),
-        is_read=False  # всегда новое сообщение — непрочитано
+        is_read=False
     )
 
     return Response(ChatMessageSerializer(message).data, status=201)

@@ -1,7 +1,16 @@
 from rest_framework import serializers
 from .models import User, Ride, Booking, ChatMessage, Chat
 
-# ✅ Chat Serializer
+# ✅ Сериализатор сообщений чата
+class ChatMessageSerializer(serializers.ModelSerializer):
+    sender_username = serializers.CharField(source='sender.username', read_only=True)
+
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp', 'is_read']
+        read_only_fields = ['id', 'chat', 'sender', 'sender_username', 'timestamp', 'is_read']
+
+# ✅ Сериализатор чата
 class ChatSerializer(serializers.ModelSerializer):
     participants_usernames = serializers.SerializerMethodField()
 
@@ -12,15 +21,7 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_participants_usernames(self, obj):
         return [user.username for user in obj.participants.all()]
 
-class ChatMessageSerializer(serializers.ModelSerializer):
-    sender_username = serializers.CharField(source='sender.username', read_only=True)
-
-    class Meta:
-        model = ChatMessage
-        fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp', 'is_read']  # ✅ добавлено is_read
-        read_only_fields = ['id', 'chat', 'sender', 'sender_username', 'timestamp']
-
-# ✅ User Serializer
+# ✅ Сериализатор пользователя
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -33,7 +34,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
-# ✅ Ride Serializer
+# ✅ Сериализатор поездки
 class RideSerializer(serializers.ModelSerializer):
     driver = serializers.IntegerField(source='driver.id', read_only=True)
     driverUsername = serializers.CharField(source='driver.username', read_only=True)
@@ -45,7 +46,7 @@ class RideSerializer(serializers.ModelSerializer):
         model = Ride
         fields = '__all__'
 
-# ✅ Booking Serializer
+# ✅ Сериализатор бронирования
 class BookingSerializer(serializers.ModelSerializer):
     passenger_username = serializers.CharField(source='passenger.username', read_only=True)
 
