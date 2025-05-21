@@ -27,7 +27,8 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'has_ac': {'required': False},
-            'password': {'write_only': True}
+            'password': {'write_only': True},
+            'show_phone': {'required': False}
         }
 
     def create(self, validated_data):

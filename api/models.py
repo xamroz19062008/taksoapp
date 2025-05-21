@@ -9,6 +9,8 @@ class User(AbstractUser):
     has_ac = models.BooleanField(default=False)
     is_female = models.BooleanField(default=False)
     hide_phone = models.BooleanField(default=False)
+    show_phone = models.BooleanField(default=True)
+
 
     def __str__(self):
         return self.username
