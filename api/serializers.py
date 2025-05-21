@@ -12,13 +12,13 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_participants_usernames(self, obj):
         return [user.username for user in obj.participants.all()]
 
-# ✅ ChatMessage Serializer
 class ChatMessageSerializer(serializers.ModelSerializer):
     sender_username = serializers.CharField(source='sender.username', read_only=True)
 
     class Meta:
         model = ChatMessage
-        fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp']
+        fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp', 'is_read']  # ✅ добавлено is_read
+        read_only_fields = ['id', 'chat', 'sender', 'sender_username', 'timestamp']
 
 # ✅ User Serializer
 class UserSerializer(serializers.ModelSerializer):

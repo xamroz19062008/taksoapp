@@ -135,7 +135,7 @@ def get_or_create_chat(user1, user2):
         return chat
 
 
-# === Получить сообщения чата ===
+# === Получить сообщения чата и отметить как прочитанные ===
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_chat_messages(request, receiver_id):
@@ -146,6 +146,10 @@ def get_chat_messages(request, receiver_id):
         return Response({'error': 'User not found'}, status=404)
 
     chat = get_or_create_chat(user, receiver)
+
+    # ✅ Отмечаем непрочитанные входящие как прочитанные
+    ChatMessage.objects.filter(chat=chat, sender=receiver, is_read=False).update(is_read=True)
+
     messages = ChatMessage.objects.filter(chat=chat).order_by('timestamp')
     serializer = ChatMessageSerializer(messages, many=True)
     return Response(serializer.data)
@@ -168,7 +172,8 @@ def send_chat_message(request):
     message = ChatMessage.objects.create(
         chat=chat,
         sender=user,
-        message=request.data.get('message')
+        message=request.data.get('message'),
+        is_read=False  # всегда новое сообщение — непрочитано
     )
 
     return Response(ChatMessageSerializer(message).data, status=201)
@@ -212,3 +217,12 @@ def get_user_threads(request):
         for chat in threads
     ]
     return Response(data)
+
+
+# === Получить количество непрочитанных сообщений ===
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unread_message_count(request):
+    user = request.user
+    count = ChatMessage.objects.filter(chat__participants=user, is_read=False).exclude(sender=user).count()
+    return Response({'unread_count': count})
