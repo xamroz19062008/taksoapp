@@ -5,11 +5,11 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from django.utils.timezone import make_aware
+from django.db.models import Q
 from datetime import datetime
 
-from .models import User, Ride, Booking
-from .serializers import UserSerializer, RideSerializer, BookingSerializer
-
+from .models import User, Ride, Booking, ChatMessage
+from .serializers import UserSerializer, RideSerializer, BookingSerializer, ChatMessageSerializer
 
 # === ViewSets ===
 class UserViewSet(viewsets.ModelViewSet):
@@ -25,7 +25,6 @@ class RideViewSet(viewsets.ModelViewSet):
 class BookingViewSet(viewsets.ModelViewSet):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-
 
 # === Регистрация пользователя ===
 @api_view(['POST'])
@@ -64,7 +63,6 @@ def register_user(request):
         print("❌ Ошибка при регистрации:", str(e))
         return Response({'error': 'Server error', 'detail': str(e)}, status=500)
 
-
 # === Логин пользователя ===
 @api_view(['POST'])
 def login_user(request):
@@ -86,7 +84,6 @@ def login_user(request):
         }, status=200)
 
     return Response({'error': 'Invalid credentials'}, status=401)
-
 
 # === Создание поездки ===
 @api_view(['POST'])
@@ -117,7 +114,6 @@ def create_ride(request):
         print("❌ Xatolik:", str(e))
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
 
-
 # === Получение и обновление текущего пользователя ===
 @api_view(['GET', 'PATCH'])
 @permission_classes([IsAuthenticated])
@@ -135,3 +131,25 @@ def user_me(request):
             user.has_ac = has_ac
             user.save()
         return Response({'has_ac': user.has_ac})
+
+# === 💬 Получение чата по поездке ===
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_chat_messages(request, ride_id):
+    messages = ChatMessage.objects.filter(ride_id=ride_id).order_by('timestamp')
+    serializer = ChatMessageSerializer(messages, many=True)
+    return Response(serializer.data)
+
+# === 💬 Отправка сообщения в чат ===
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_chat_message(request):
+    user = request.user
+    data = request.data
+    message = ChatMessage.objects.create(
+        ride_id=data['ride'],
+        sender=user,
+        message=data['message']
+    )
+    serializer = ChatMessageSerializer(message)
+    return Response(serializer.data, status=201)

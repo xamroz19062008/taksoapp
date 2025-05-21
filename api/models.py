@@ -6,7 +6,7 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20)
     is_driver = models.BooleanField(default=False)
     car_model = models.CharField(max_length=100, blank=True, null=True)
-    has_ac = models.BooleanField(default=False)  # ← Кондиционер только у пользователя
+    has_ac = models.BooleanField(default=False)  # ← Кондиционер
 
     def __str__(self):
         return self.username
@@ -15,18 +15,18 @@ class User(AbstractUser):
 class Ride(models.Model):
     origin = models.CharField(max_length=100)
     destination = models.CharField(max_length=100)
-    driver = models.ForeignKey(User, on_delete=models.CASCADE)  # ← если удалить водителя, поездка тоже удалится
+    driver = models.ForeignKey(User, on_delete=models.CASCADE)
     datetime = models.DateTimeField()
     phone = models.CharField(max_length=20)
     seats = models.IntegerField()
-    price = models.IntegerField(default=0)  # ← сумма в суммах
+    price = models.IntegerField(default=0)
 
     def __str__(self):
         return f'{self.origin} → {self.destination}'
 
 # 📦 Бронирование (пассажир бронирует поездку)
 class Booking(models.Model):
-    ride = models.ForeignKey(Ride, on_delete=models.CASCADE)  # ← если поездка удаляется, бронирование исчезает
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE)
     passenger = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(
         max_length=20,
@@ -40,10 +40,10 @@ class Booking(models.Model):
     def __str__(self):
         return f'{self.passenger.username} - {self.ride}'
 
-# 💬 Сообщения в чате
+# 💬 Сообщения в чате (Ride Chat)
 class ChatMessage(models.Model):
-    ride = models.ForeignKey(Ride, on_delete=models.CASCADE)  # ← чат связан с поездкой
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)  # ← кто отправил
+    ride = models.ForeignKey(Ride, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 

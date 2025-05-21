@@ -1,6 +1,13 @@
 from rest_framework import serializers
 from .models import User, Ride, Booking
+from .models import ChatMessage
 
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMessage
+        fields = '__all__'
+        
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

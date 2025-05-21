@@ -7,7 +7,9 @@ from .views import (
     register_user,
     login_user,
     create_ride,
-    user_me,  # ✅ добавлено
+    user_me,
+    get_chat_messages,
+    send_chat_message,
 )
 
 router = DefaultRouter()
@@ -20,5 +22,7 @@ urlpatterns = [
     path('register/', register_user),
     path('login/', login_user),
     path('custom/create_ride/', create_ride),
-    path('users/me/', user_me),  # ✅ обязательно для PATCH/GET профиля
+    path('users/me/', user_me),
+    path('chat/<int:ride_id>/', get_chat_messages),
+    path('chat/send/', send_chat_message),
 ]
