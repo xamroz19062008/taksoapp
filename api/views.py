@@ -15,6 +15,7 @@ from .serializers import (
     ChatMessageSerializer,
 )
 
+
 # === ViewSets ===
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -45,6 +46,10 @@ class UserViewSet(viewsets.ModelViewSet):
 class RideViewSet(viewsets.ModelViewSet):
     queryset = Ride.objects.all().order_by('-datetime')
     serializer_class = RideSerializer
+
+    # ✅ Это нужно для get_phone в RideSerializer
+    def get_serializer_context(self):
+        return {'request': self.request}
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -79,7 +84,6 @@ def register_user(request):
         user.has_ac = bool(data.get('has_ac', False))
         user.show_phone = bool(data.get('show_phone', True))
         user.gender = data.get('gender') if not is_driver else None
-
         user.save()
 
         token, _ = Token.objects.get_or_create(user=user)
@@ -135,10 +139,10 @@ def create_ride(request):
             price=int(data['price']) if user.is_driver else 0,
             datetime=aware_datetime,
             driver=user,
-            has_female_passenger=data.get('has_female_passenger', False)  # ✅ добавлено
+            has_female_passenger=data.get('has_female_passenger', False)
         )
 
-        return Response(RideSerializer(ride).data, status=201)
+        return Response(RideSerializer(ride, context={'request': request}).data, status=201)
     except Exception as e:
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
 
@@ -190,7 +194,7 @@ def send_chat_message(request):
 
     chat = get_or_create_chat(user, receiver)
 
-    message = ChatMessage.create(
+    message = ChatMessage.objects.create(
         chat=chat,
         sender=user,
         message=request.data.get('message'),
