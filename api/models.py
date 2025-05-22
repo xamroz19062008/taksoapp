@@ -10,6 +10,7 @@ class User(AbstractUser):
     is_female = models.BooleanField(default=False)
     hide_phone = models.BooleanField(default=False)
     show_phone = models.BooleanField(default=True)
+    gender = models.CharField(max_length=10, choices=[('male', 'Мужчина'), ('female', 'Женщина')], null=True)
 
 
     def __str__(self):

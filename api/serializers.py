@@ -10,6 +10,7 @@ class ChatMessageSerializer(serializers.ModelSerializer):
         fields = ['id', 'chat', 'sender', 'sender_username', 'message', 'timestamp', 'is_read']
         read_only_fields = ['id', 'chat', 'sender', 'sender_username', 'timestamp', 'is_read']
 
+
 # ✅ Сериализатор чата
 class ChatSerializer(serializers.ModelSerializer):
     participants_usernames = serializers.SerializerMethodField()
@@ -21,18 +22,22 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_participants_usernames(self, obj):
         return [user.username for user in obj.participants.all()]
 
+
+# ✅ Сериализатор пользователя
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
         extra_kwargs = {
             'has_ac': {'required': False},
+            'show_phone': {'required': False},
             'password': {'write_only': True},
-            'show_phone': {'required': False}
+            'gender': {'required': False},  # ⬅️ добавлен gender
         }
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
 
 # ✅ Сериализатор поездки
 class RideSerializer(serializers.ModelSerializer):
@@ -42,14 +47,17 @@ class RideSerializer(serializers.ModelSerializer):
     has_ac = serializers.BooleanField(source='driver.has_ac', read_only=True)
     car_model = serializers.CharField(source='driver.car_model', read_only=True)
     show_phone = serializers.BooleanField(source='driver.show_phone', read_only=True)
+    driver_gender = serializers.CharField(source='driver.gender', read_only=True)  # ⬅️ добавлено
 
     class Meta:
         model = Ride
         fields = '__all__'
 
+
 # ✅ Сериализатор бронирования
 class BookingSerializer(serializers.ModelSerializer):
     passenger_username = serializers.CharField(source='passenger.username', read_only=True)
+    passenger_gender = serializers.CharField(source='passenger.gender', read_only=True)  # ⬅️ добавлено
 
     class Meta:
         model = Booking
