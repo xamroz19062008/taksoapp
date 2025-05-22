@@ -39,6 +39,7 @@ class Ride(models.Model):
     phone = models.CharField(max_length=20)
     seats = models.IntegerField()
     price = models.IntegerField(default=0)
+    has_female_passenger = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.origin} → {self.destination}'

@@ -61,7 +61,6 @@ def register_user(request):
         if not data.get(field):
             return Response({'error': f'Missing field: {field}'}, status=400)
 
-    # ✅ Проверка: если это не водитель, то пол обязателен
     is_driver = bool(data.get('is_driver', False))
     if not is_driver and not data.get('gender'):
         return Response({'error': 'Jins majburiy (faqat yo‘lovchilar uchun)'}, status=400)
@@ -79,7 +78,7 @@ def register_user(request):
         user.car_model = data.get('car_model') or ''
         user.has_ac = bool(data.get('has_ac', False))
         user.show_phone = bool(data.get('show_phone', True))
-        user.gender = data.get('gender') if not is_driver else None  # Только для пассажиров
+        user.gender = data.get('gender') if not is_driver else None
 
         user.save()
 
@@ -127,6 +126,7 @@ def create_ride(request):
 
     try:
         aware_datetime = make_aware(datetime.fromisoformat(data['datetime']))
+
         ride = Ride.objects.create(
             origin=data['origin'],
             destination=data['destination'],
@@ -134,8 +134,10 @@ def create_ride(request):
             seats=int(data['seats']),
             price=int(data['price']) if user.is_driver else 0,
             datetime=aware_datetime,
-            driver=user
+            driver=user,
+            has_female_passenger=data.get('has_female_passenger', False)  # ✅ добавлено
         )
+
         return Response(RideSerializer(ride).data, status=201)
     except Exception as e:
         return Response({'error': f"Eʼlon yaratishda xatolik: {e}"}, status=400)
@@ -188,7 +190,7 @@ def send_chat_message(request):
 
     chat = get_or_create_chat(user, receiver)
 
-    message = ChatMessage.objects.create(
+    message = ChatMessage.create(
         chat=chat,
         sender=user,
         message=request.data.get('message'),
@@ -245,5 +247,4 @@ def get_user_threads(request):
 def get_unread_message_count(request):
     user = request.user
     count = ChatMessage.objects.filter(chat__participants=user, is_read=False).exclude(sender=user).count()
-
     return Response({'unread_count': count})
