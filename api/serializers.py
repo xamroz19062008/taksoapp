@@ -23,7 +23,7 @@ class ChatSerializer(serializers.ModelSerializer):
         return [user.username for user in obj.participants.all()]
 
 
-# ✅ Сериализатор пользователя
+# ✅ Сериализатор пользователя с валидацией пола
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -31,11 +31,17 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'has_ac': {'required': False},
             'show_phone': {'required': False},
+            'hide_phone': {'required': False},
+            'car_model': {'required': False},
             'password': {'write_only': True},
-            'gender': {'required': False},  # ⬅️ добавлен gender
+            'gender': {'required': False},
         }
 
     def create(self, validated_data):
+        # ✅ Проверка: если это не водитель, то gender обязателен
+        if not validated_data.get("is_driver") and validated_data.get("gender") is None:
+            raise serializers.ValidationError("Jins majburiy (faqat yo‘lovchilar uchun)")
+
         return User.objects.create_user(**validated_data)
 
 
@@ -47,7 +53,7 @@ class RideSerializer(serializers.ModelSerializer):
     has_ac = serializers.BooleanField(source='driver.has_ac', read_only=True)
     car_model = serializers.CharField(source='driver.car_model', read_only=True)
     show_phone = serializers.BooleanField(source='driver.show_phone', read_only=True)
-    driver_gender = serializers.CharField(source='driver.gender', read_only=True)  # ⬅️ добавлено
+    driver_gender = serializers.CharField(source='driver.gender', read_only=True)  # 👈
 
     class Meta:
         model = Ride
@@ -57,7 +63,7 @@ class RideSerializer(serializers.ModelSerializer):
 # ✅ Сериализатор бронирования
 class BookingSerializer(serializers.ModelSerializer):
     passenger_username = serializers.CharField(source='passenger.username', read_only=True)
-    passenger_gender = serializers.CharField(source='passenger.gender', read_only=True)  # ⬅️ добавлено
+    passenger_gender = serializers.CharField(source='passenger.gender', read_only=True)  # 👈
 
     class Meta:
         model = Booking

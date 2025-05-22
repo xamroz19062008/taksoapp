@@ -61,6 +61,11 @@ def register_user(request):
         if not data.get(field):
             return Response({'error': f'Missing field: {field}'}, status=400)
 
+    # ✅ Проверка: если это не водитель, то пол обязателен
+    is_driver = bool(data.get('is_driver', False))
+    if not is_driver and not data.get('gender'):
+        return Response({'error': 'Jins majburiy (faqat yo‘lovchilar uchun)'}, status=400)
+
     if User.objects.filter(username=data['username']).exists():
         return Response({'error': 'Username already taken'}, status=400)
 
@@ -70,10 +75,12 @@ def register_user(request):
             password=data['password']
         )
         user.phone = data['phone']
-        user.is_driver = bool(data.get('is_driver', False))
+        user.is_driver = is_driver
         user.car_model = data.get('car_model') or ''
         user.has_ac = bool(data.get('has_ac', False))
         user.show_phone = bool(data.get('show_phone', True))
+        user.gender = data.get('gender') if not is_driver else None  # Только для пассажиров
+
         user.save()
 
         token, _ = Token.objects.get_or_create(user=user)
@@ -238,4 +245,5 @@ def get_user_threads(request):
 def get_unread_message_count(request):
     user = request.user
     count = ChatMessage.objects.filter(chat__participants=user, is_read=False).exclude(sender=user).count()
+
     return Response({'unread_count': count})
